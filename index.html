@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1">
+    <title>Throttled Progress Bars</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 1.25rem;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .controls {
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 0.75rem 1.125rem;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        select {
+            padding: 0.4375rem;
+            font-size: 1rem;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 1.5rem;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(to right, #4caf50, #81c784);
+            transition: width 3s linear;
+            aria-live: polite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Throttled Progress Bars</h2>
+        <div class="controls">
+            <label for="maxBars">Max Active Progress Bars:</label>
+            <select id="maxBars" onchange="updateMaxBars()">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+        <button onclick="addProgressBar()">Add Progress Bar</button>
+        <p>Max Active Bars: <strong id="currentMaxBars">3</strong></p>
+        <p>Queue Size: <strong id="queueSize">0</strong></p>
+        <div id="progressBarsContainer"></div>
+    </div>
+    <script>
+        let MAX_ACTIVE_BARS = parseInt(document.getElementById('maxBars').value) || 3;
+        let activeBars = 0;
+        let queue = [];
+        function updateMaxBars() {
+            MAX_ACTIVE_BARS = parseInt(document.getElementById('maxBars').value);
+            document.getElementById('currentMaxBars').innerText = MAX_ACTIVE_BARS;
+            processQueue();
+        }
+        function addProgressBar() {
+            if (activeBars < MAX_ACTIVE_BARS) {
+                createProgressBar();
+            } else {
+                queue.push(() => createProgressBar());
+                updateQueueSize();
+            }
+        }
+        function createProgressBar() {
+    
+            activeBars++;
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'progress-container';
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            progressBar.setAttribute('aria-valuenow', '0');
+            progressContainer.appendChild(progressBar);
+            document.getElementById('progressBarsContainer').appendChild(progressContainer);
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+                progressBar.setAttribute('aria-valuenow', '100');
+                progressBar.setAttribute('aria-valuenow', '100');
+            }, 50);
+            setTimeout(() => {
+                progressContainer.remove();
+                activeBars--;
+                nextBar();
+            }, 3000);
+        }
+        function nextBar() {
+            if (queue.length > 0 && activeBars < MAX_ACTIVE_BARS) {
+                const nextBarFunction = queue.shift();
+                nextBarFunction();
+                updateQueueSize();
+            }
+        }
+        function processQueue() {
+            while (queue.length > 0 && activeBars < MAX_ACTIVE_BARS) {
+                nextBar();
+            }
+        }
+        function updateQueueSize() {
+            document.getElementById('queueSize').innerText = queue.length;
+        }
+    </script>
+</body>
+</html>
